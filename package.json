@@ -1,0 +1,25 @@
+{
+  "name": "user-management",
+  "version": "1.0.0",
+  "description": "user-management",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sustainablility/user-management.git"
+  },
+  "author": "Linbin Pang",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sustainablility/user-management/issues"
+  },
+  "homepage": "https://github.com/sustainablility/user-management#readme",
+  "devDependencies": {
+    "express": "^4.16.4",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
+    "silly-datetime": "^0.1.2"
+  }
+}
