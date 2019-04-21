@@ -1,6 +1,9 @@
 let app = require('express')();
 let config = require('./config');
 
-app.get(config.pathToOauthAuthorizationCallbackUrl, require('./src/oauth/index').default);
+function service(){
+    app.get(config.pathToOauthAuthorizationCallbackUrl, require('./src/oauth/index'));
+    app.listen(config.listenOnPort);
+}
 
-app.listen(8888);
+service();

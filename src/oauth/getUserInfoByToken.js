@@ -1,6 +1,12 @@
 let request = require('request-promise');
 let log = require('../log');
 
+/**
+ * Get user's information by token
+ * @param token
+ * @param url
+ * @returns {Promise<null|*>}
+ */
 async function getUserInfoByToken(token,url) {
     let response = await request({
         uri: url,
@@ -27,6 +33,6 @@ async function getUserInfoByToken(token,url) {
     return userInfo;
 }
 
-exports.default = getUserInfoByToken;
+module.exports = getUserInfoByToken;
 
 //getUserInfoByToken("5b4e5ea05529cdbab2b78d98fb79249a55c75252","https://api.github.com/user");

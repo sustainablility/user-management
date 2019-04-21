@@ -1,5 +1,5 @@
-let getToken = require("./getToken").default;
-let getUserInfo = require('./getUserInfoByToken').default;
+let getToken = require("./getToken");
+let getUserInfo = require('./getUserInfoByToken');
 let config = require("../../config");
 
 function callback(request, response) {
@@ -8,15 +8,15 @@ function callback(request, response) {
             response.send("Lack of parameters");
             return null;
         }
-        let token = await getToken(request.query.code,"https://github.com/login/oauth/authorize",config.oauthInfo.client_id,config.oauthInfo.client_secret);
+        let token = await getToken(request.query.code,config.oauthURL.github.token,config.oauthInfo.github.client_id,config.oauthInfo.github.client_secret);
         if (token === null) {
             response.send("Error");
             return null;
         }
-        let userInfo = await getUserInfo(token,"https://api.github.com/user");
+        let userInfo = await getUserInfo(token,config.oauthURL.github.userInfo);
         console.log(userInfo);
         response.redirect("https://www.google.com");
     })();
 }
 
-exports.default = callback;
+module.exports = callback;
