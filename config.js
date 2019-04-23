@@ -28,6 +28,10 @@ exports.database = {
 exports.newUserTemplate = (identity = null,email = null) => {
     return {
         identity: identity,
-            email: email
+        email: email,
+        userToken: null,
+        userTokenExpireTime: null
     };
 };
+
+exports.tokenWouldBeExpireInDays = 30;
