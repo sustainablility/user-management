@@ -25,13 +25,13 @@ exports.database = {
     port: 6666,
 };
 
-exports.newUserTemplate = (identity = null,email = null) => {
+exports.newUserTemplate = (identity = null,email = null,userToken = null, userTokenExpireTime = null) => {
     return {
         identity: identity,
         email: email,
-        userToken: null,
-        userTokenExpireTime: null
+        userToken: userToken,
+        userTokenExpireTime: userTokenExpireTime
     };
 };
 
-exports.tokenWouldBeExpireInDays = 30;
+exports.tokenLife = 30;
