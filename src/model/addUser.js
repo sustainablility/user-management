@@ -10,7 +10,7 @@ let config = require('../../config');
  * return an raw message from mongodb
  */
 async function addUser(db,id,email) {
-    let result = await db.collection(config.database.table).insertOne(config.newUserTemplate(id,email)).catch(err => {
+    let result = await db.collection(config.database.table).insertOne({'identity': id,'email': email}).catch(err => {
         log.error("Add user failed",err);
         return null;
     });

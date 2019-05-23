@@ -68,8 +68,8 @@ describe("Testing For User's Object",function () {
                             break;
                     }
                 });
-                user.newToken();
-                assert.notEqual(temp.token,user.renewToken());
+                user.newUserToken();
+                assert.notEqual(temp.token,user.renewUserToken());
                 done();
             }
         )();
