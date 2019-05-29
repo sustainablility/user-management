@@ -25,4 +25,5 @@ exports.database = {
     port: 6666,
 };
 
-exports.tokenLife = 30;
+// In hours
+exports.userTokenLife = 3;

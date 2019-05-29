@@ -29,11 +29,11 @@ class User {
     getFollowing() {
         return this.following;
     }
-    getDatabases() {
-        return this.databases;
-    }
     getStars() {
         return this.stars;
+    }
+    getDatabases() {
+        return this.databases;
     }
     getOrganization() {
         return this.organization;
@@ -51,6 +51,14 @@ class User {
         this.email = email;
     }
 
+    /**
+     * Get User information from database
+     * @param id
+     * @returns {Promise<number>}
+     * return 0 means okey.
+     * return 1 means database connection error (on reject).
+     * return 2 means user not found.
+     */
     async getUser(id) {
         let conn = await createConnection();
         let userInfo = await getUserInfo(conn.db,this.identity);
@@ -86,8 +94,8 @@ class User {
      * If ID is new, it would create a new user and generate a new token.
      * If ID existed and token expired, it would generate a new token.
      *
-     * @returns {Promise<any>}
-     *  on resolve, the function would not return anything.
+     * @returns {Promise<string>}
+     *  on resolve, the function would not return the token.
      *
      *  on reject, the function would return following things:
      *  1 means user existed, but token assign error.
@@ -99,6 +107,7 @@ class User {
         let userInfo = await getUserInfo(conn.db,this.identity);
         if (userInfo == null) {
             // Database Error
+            conn.done();
             return Promise.reject(1);
         }
         if (userInfo.length === 0) {
@@ -106,77 +115,56 @@ class User {
             let addUserResult = await addUser(conn.db,this.identity,this.email);
             if (addUserResult.result.ok === 1) {
                 // Add user success
-                this.newUserToken()
+                this.initUser();
+                let token = this.newUserToken();
+                if (!this.updateUserDatabase(conn.db)){
+                    // assign detail
+                    conn.done();
+                    return Promise.reject(3);
+                }
+                conn.done();
+                return token;
+            }else {
+                conn.done();
+                return Promise.reject(2);
             }
+        }else {
+            // Existed User
+            this.transferDatabaseUserObjToThis(userInfo[0]);
+
+            // Assign new token
+            conn.done();
+            return this.newUserToken();
         }
     }
 
-    newUserInitialize() {
-        this.newUserToken();
-        this.newDatabaseToken();
-    }
-    login() {
-        return new Promise(async (resolve, reject) => {
-            let conn = await createConnection();
-            let userInfo = await getUserInfo(conn.db,this.identity);
-            if (userInfo !== null) {
-                // If no error in database
-                if (userInfo.length === 0) {
-                    // New user
-                    let addUserResult = await addUser(conn.db,this.identity,this.email);
-                    if (addUserResult.result.ok === 1) {
-                        // If adding user success, assign the token
-                        this.newUserToken();
-                        if (await this.updateUserDatabase(conn.db)) {
-                            // Assign token success
-                            conn.done();
-                            resolve(this);
-                        }else {
-                            // Assign token failed
-                            conn.done();
-                            reject(3);
-                        }
-                    }else {
-                        // Adding user failed
-                        conn.done();
-                        reject(2);
-                    }
-                }else {
-                    // User existed
-                    this.email = userInfo[0].email;
-                    if (new Date() > userInfo[0].userTokenExpireTime) {
-                        // Token expired
-                        this.newUserToken();
-                        if (await this.updateUserDatabase(conn.db)) {
-                            // assign token success
-                            conn.done();
-                            resolve(this);
-                        } else {
-                            // assign token failed
-                            conn.done();
-                            reject(1);
-                        }
-                    }else {
-                        // Token does not expired
-                        this.userToken = userInfo[0].userToken;
-                        this.userTokenExpireTime = userInfo[0].userTokenExpireTime;
-                        conn.done();
-                        resolve(this);
-                    }
 
-                }
-            }
-        })
+    /**
+     * Initialize user
+     */
+    initUser() {
+        this.userToken = [];
+        this.userTokenExpireTime = [];
+        this.newDatabaseToken();
+        this.stars = [];
+        this.following = [];
+        this.databases = [];
+        this.organization = [];
+        this.location = "";
+        this.personalDesc = "";
     }
 
     /**
-     * Generate a new user token in this object.
+     * Generate a new token and return it
+     * @returns {string}
      */
     newUserToken() {
-        this.userToken = tokenGenerator();
+        let token = tokenGenerator();
+        this.userToken.push(token);
         let expireDate = new Date();
-        expireDate.setDate(expireDate.getDate() + config.tokenLife);
-        this.userTokenExpireTime = expireDate;
+        expireDate.setHours(expireDate.getHours() + config.userTokenLife);
+        this.userTokenExpireTime[token] = expireDate;
+        return token;
     }
 
     newDatabaseToken() {
@@ -185,16 +173,22 @@ class User {
     }
 
     /**
-     * New user token and sync to database
-     * @returns {Promise<*>}
+     * For checking token if expired or not existed.
+     *
+     * @param token
+     * @returns {boolean} true if expired or not existed.
      */
-    async renewUserToken() {
-        this.newUserToken();
-        let conn = await createConnection();
-        let result = await this.updateUserDatabase(conn.db);
-        conn.done();
-        return result;
+    isUserTokenExpired(token) {
+        if (this.userTokenExpireTime[token] === undefined) {
+            // Token not existed
+            return true;
+        }else if (this.userTokenExpireTime[token] < new Date()) {
+            // Token expired
+            return true;
+        }
+        return false;
     }
+
 
     /**
      * Remove this user.

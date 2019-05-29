@@ -9,7 +9,7 @@ describe("Testing For User's Object",function () {
         (
             async function() {
                 let user = new User(testingID,testingEmail);
-                await user.login().catch((err) => {
+                let userToken = await user.oauthLogin().catch((err) => {
                     switch (err) {
                         case 1:
                             assert.fail("user existed, but token assign error");
@@ -24,7 +24,9 @@ describe("Testing For User's Object",function () {
                 });
                 assert.strictEqual(testingID,user.getID(),"New user ID does not match the expected value");
                 assert.strictEqual(testingEmail,user.getEmail(),"New user Email does not match the expected value");
-                temp.token = user.getUserToken();
+                assert.notStrictEqual(userToken,null,"Token Generate failed");
+                assert.notStrictEqual(userToken,undefined,"Token Generate failed");
+                temp.token = userToken;
                 done();
             }
         )();
@@ -33,7 +35,7 @@ describe("Testing For User's Object",function () {
         (
             async function() {
                 let user = new User(testingID,testingEmail);
-                await user.login().catch(err => {
+                let newUserToken = await user.oauthLogin().catch(err => {
                     switch (err) {
                         case 1:
                             assert.fail("user existed, but token assign error");
@@ -46,31 +48,9 @@ describe("Testing For User's Object",function () {
                             break;
                     }
                 });
-                assert.strictEqual(temp.token,user.userToken,"Token suppose to be same");
+                assert.strictEqual(temp.token,user.userToken[0],"Token suppose to be same");
+                assert.strictEqual(newUserToken,user.userToken[1],"Token suppose to be same");
                 done()
-            }
-        )();
-    });
-    it('Update Token', function (done) {
-        (
-            async function() {
-                let user = new User(testingID,testingEmail);
-                await user.login().catch(err => {
-                    switch (err) {
-                        case 1:
-                            assert.fail("user existed, but token assign error");
-                            break;
-                        case 2:
-                            assert.fail("new user, but adding user failed");
-                            break;
-                        case 3:
-                            assert.fail("new user, but assigning user token failed");
-                            break;
-                    }
-                });
-                user.newUserToken();
-                assert.notEqual(temp.token,user.renewUserToken());
-                done();
             }
         )();
     });
@@ -78,7 +58,7 @@ describe("Testing For User's Object",function () {
         (
             async function() {
                 let user = new User(testingID,testingEmail);
-                await user.login().catch(err => {
+                await user.oauthLogin().catch(err => {
                     switch (err) {
                         case 1:
                             assert.fail("user existed, but token assign error");
