@@ -1,0 +1,3 @@
+[submodule "src/microservice-communication-encryption"]
+	path = src/microservice-communication-encryption
+	url = https://github.com/sustainablility/microservice-communication-encryption.git

@@ -1,14 +1,24 @@
 let createConnection = require('../src/model/createConnection');
 let addUser = require('../src/model/addUser');
 let getUserInformation = require("../src/model/getUserInformation");
+let getUserInformationByToken = require('../src/model/getUserInformationByToken');
+let getUserInformationByDatabaseToken = require('../src/model/getUserInformationByDatabaseToken');
 let removeUser = require('../src/model/removeUser');
 let updateUser = require('../src/model/updateUserInfo');
 let assert = require('chai').assert;
 let sampleUser = {
-    id: "test",
+    identity: "test",
     email: "test@test.test",
-    token: "xxxxxx",
-    tokenExpire: new Date()
+    following: ['i','j','k'],
+    organization: ['a','b'],
+    personalDesc: "xxx",
+    stars: ['d','e','f'],
+    userToken: ['abcde'],
+    userTokenExpireTime: {
+        'abcde' : new Date()
+    },
+    databaseToken: "asdfg",
+    databaseTokenExpireTime: null
 };
 
 describe("User management",function () {
@@ -27,7 +37,7 @@ describe("User management",function () {
     it('Add user', function (done) {
         (
             async function() {
-                let addUserResult = await addUser(mongo.db,sampleUser.id,sampleUser.email);
+                let addUserResult = await addUser(mongo.db,sampleUser.identity,sampleUser.email);
                 assert.strictEqual(addUserResult.result.ok,1,"Insert User Error");
                 done();
             }
@@ -37,7 +47,7 @@ describe("User management",function () {
     it('Update user information', function (done) {
         (
             async function() {
-                let updateUserInfoResult = await updateUser(mongo.db,sampleUser.id,{userToken: sampleUser.token,userTokenExpireTime: sampleUser.tokenExpire});
+                let updateUserInfoResult = await updateUser(mongo.db,sampleUser.identity,sampleUser);
                 assert.strictEqual(updateUserInfoResult.result.ok,1,"Update User information failed");
                 done();
             }
@@ -47,12 +57,35 @@ describe("User management",function () {
     it('Get user by ID', function (done) {
         (
             async function() {
-                let userInfo = await getUserInformation(mongo.db,sampleUser.id);
+                let userInfo = await getUserInformation(mongo.db,sampleUser.identity);
                 assert.strictEqual(userInfo.length,1,"Error, because program get more than 1 users");
-                assert.strictEqual(userInfo[0].identity,sampleUser.id,"ID does not match");
+                assert.strictEqual(userInfo[0].identity,sampleUser.identity,"ID does not match");
                 assert.strictEqual(userInfo[0].email,sampleUser.email,"Email Does not match");
-                assert.strictEqual(userInfo[0].userToken,sampleUser.token,"Token does not match");
-                assert.strictEqual(userInfo[0].userTokenExpireTime.toDateString(),sampleUser.tokenExpire.toDateString(),"Token Expire Date Does not match");
+                assert.strictEqual(userInfo[0].personalDesc,sampleUser.personalDesc,"Personal Description does not match");
+                done();
+            }
+        )();
+    });
+    it('Get user by Token', function (done) {
+        (
+            async function() {
+                let userInfo = await getUserInformationByToken(mongo.db,sampleUser.userToken[0]);
+                assert.strictEqual(userInfo.length,1,"Error, because program get more than 1 users");
+                assert.strictEqual(userInfo[0].identity,sampleUser.identity,"ID does not match");
+                assert.strictEqual(userInfo[0].email,sampleUser.email,"Email Does not match");
+                assert.strictEqual(userInfo[0].personalDesc,sampleUser.personalDesc,"Personal Description does not match");
+                done();
+            }
+        )();
+    });
+    it('Get user by database Token', function (done) {
+        (
+            async function() {
+                let userInfo = await getUserInformationByDatabaseToken(mongo.db,sampleUser.databaseToken);
+                assert.strictEqual(userInfo.length,1,"Error, because program get more than 1 users");
+                assert.strictEqual(userInfo[0].identity,sampleUser.identity,"ID does not match");
+                assert.strictEqual(userInfo[0].email,sampleUser.email,"Email Does not match");
+                assert.strictEqual(userInfo[0].personalDesc,sampleUser.personalDesc,"Personal Description does not match");
                 done();
             }
         )();
@@ -60,7 +93,7 @@ describe("User management",function () {
     it('Delete Testing User', function (done) {
         (
             async function() {
-                let removeUserResult = await removeUser(mongo.db,sampleUser.id);
+                let removeUserResult = await removeUser(mongo.db,sampleUser.identity);
                 assert.strictEqual(removeUserResult.result.ok,1,"Remove Unsuccessful");
                 assert.strictEqual(removeUserResult.result.n,1,"Remove More use than expected");
                 done();
@@ -71,7 +104,7 @@ describe("User management",function () {
     it('Recheck user after deleted', function (done) {
         (
             async function() {
-                let userInfo = await getUserInformation(mongo.db,sampleUser.id);
+                let userInfo = await getUserInformation(mongo.db,sampleUser.identity);
                 assert.strictEqual(userInfo.length,0,"Testing user has not deleted");
                 mongo.done();
                 done();

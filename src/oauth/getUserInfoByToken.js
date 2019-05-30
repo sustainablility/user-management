@@ -5,7 +5,7 @@ let log = require('../log');
  * Get user's information by token
  * @param token
  * @param url
- * @returns {Promise<null|*>}
+ * @returns {Promise<object>}
  */
 async function getUserInfoByToken(token,url) {
     let response = await request({

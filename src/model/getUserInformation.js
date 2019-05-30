@@ -12,7 +12,7 @@ let config = require('../../config');
 
 async function getUserInformation(db,identity) {
     let result = await db.collection(config.database.table).find({identity:identity}).toArray().catch(err => {
-        log.error("Get User Information by ID error",err);
+        log.fatal("Get User Information by ID error",err);
     });
     if (result === undefined) {
         return null;

@@ -3,6 +3,8 @@ let createConnection = require('../model/createConnection');
 let getUserInfo = require('../model/getUserInformation');
 let removeUser = require('../model/removeUser');
 let updateUserInfo = require('../model/updateUserInfo');
+let getUserInfoByToken = require('../model/getUserInformationByToken');
+let getUserInfoByDatabaseToken = require('../model/getUserInformationByDatabaseToken');
 
 let config = require('../../config');
 let tokenGenerator = require('./tokenGenerator');
@@ -45,33 +47,139 @@ class User {
         return this.personalDesc
     }
 
+    /**
+     * Packing user data
+     * @returns {{databases: Array, following: Array, organization: Array, databaseTokenTimeRemain: number, location: string, id: undefined, stars: Array, personalDesc: string, email: undefined, databaseToken: *}}
+     */
+    packingUserInformation() {
+        let now = new Date();
+        let databaseToken;
+        let databaseTokenTimeRemain;
+        if ((this.databaseTokenExpireTime === null || this.databaseTokenExpireTime > now) && this.databaseToken !== null) {
+            databaseToken = this.databaseToken;
+            if (this.databaseTokenExpireTime === null) {
+                databaseTokenTimeRemain = null;
+            }else {
+                databaseTokenTimeRemain = this.databaseTokenExpireTime - now;
+            }
+        }else {
+            databaseToken = null;
+            databaseTokenTimeRemain = null;
+        }
+        return {
+            id: this.identity,
+            email: this.email,
+            following: this.following,
+            stars: this.stars,
+            databases: this.databases,
+            organization: this.organization,
+            location: this.location,
+            personalDesc: this.personalDesc,
+            databaseToken: databaseToken,
+            databaseTokenTimeRemain: databaseTokenTimeRemain
+        };
+    }
 
-    constructor(id,email = undefined) {
+
+    constructor(id = undefined,email = undefined) {
         this.identity = id;
         this.email = email;
     }
 
     /**
-     * Get User information from database
-     * @param id
+     * Get User from database by id to this
      * @returns {Promise<number>}
      * return 0 means okey.
-     * return 1 means database connection error (on reject).
+     * return 1 means database connection error.
      * return 2 means user not found.
      */
-    async getUser(id) {
+    async getUserById() {
         let conn = await createConnection();
         let userInfo = await getUserInfo(conn.db,this.identity);
         if (userInfo == null) {
             // Database Connection Error
-            return Promise.reject(1);
+            conn.done();
+            return 1;
         }
         if (userInfo.length === 0) {
             // User not found
-            return Promise.reject(2);
+            conn.done();
+            return 2;
         }
         this.transferDatabaseUserObjToThis(userInfo[0]);
         conn.done();
+        return 0;
+    }
+
+    /**
+     * Get user from database by token to this
+     * @param userToken
+     * @returns {Promise<number>}
+     * return 0 means okey.
+     * return 1 means database connection error.
+     * return 2 means user not found.
+     */
+    async getUserByToken(userToken) {
+        let conn = await createConnection();
+        let userInfo = await getUserInfoByToken(conn.db,userToken);
+        if (userInfo == null) {
+            // Database Connection Error
+            conn.done();
+            return 1;
+        }
+        if (userInfo.length === 0) {
+            // User not found
+            conn.done();
+            return 2;
+        }
+        this.transferDatabaseUserObjToThis(userInfo[0]);
+        if (!this.userTokenExpireTime.hasOwnProperty(userToken)) {
+            // User Token Expire time not existed
+            this.userToken.splice(this.userToken.indexOf(userToken),1);
+            this.updateUserDatabase(conn.db);
+            conn.done();
+            return 2;
+        }
+        if (this.userTokenExpireTime[userToken] < new Date()) {
+            // User Token Expire time not existed
+            this.userToken.splice(this.userToken.indexOf(userToken),1);
+            delete this.userTokenExpireTime[userToken];
+            this.updateUserDatabase(conn.db);
+            conn.done();
+            return 2;
+        }
+        this.transferDatabaseUserObjToThis(userInfo[0]);
+        conn.done();
+        return 0;
+    }
+
+    /**
+     * Get user from database by database token to this
+     * @param databaseToken
+     * @returns {Promise<number>}
+     * return 0 means okey.
+     * return 1 means database connection error.
+     * return 2 means user not found.
+     */
+    async getUserByDatabaseToken(databaseToken) {
+        let conn = await createConnection();
+        let userInfo = await getUserInfoByDatabaseToken(conn.db,databaseToken);
+        conn.done();
+        if (userInfo == null) {
+            // Database Connection Error
+            return 1;
+        }
+        if (userInfo.length === 0) {
+            // User not found
+            return 2;
+        }
+        if (userInfo[0].databaseTokenExpireTime !== null) {
+            if (userInfo[0].databaseTokenExpireTime < new Date()) {
+                // Token Expired
+                return 2;
+            }
+        }
+        this.transferDatabaseUserObjToThis(userInfo[0]);
         return 0;
     }
 
@@ -118,7 +226,7 @@ class User {
                 this.initUser();
                 let token = this.newUserToken();
                 if (!this.updateUserDatabase(conn.db)){
-                    // assign detail
+                    // assign token failed
                     conn.done();
                     return Promise.reject(3);
                 }
@@ -131,10 +239,16 @@ class User {
         }else {
             // Existed User
             this.transferDatabaseUserObjToThis(userInfo[0]);
-
             // Assign new token
+            let userToken = this.newUserToken();
+            if (!this.updateUserDatabase(conn.db)){
+                // assign token failed
+                conn.done();
+                return Promise.reject(3);
+            }
+            // Assign success
             conn.done();
-            return this.newUserToken();
+            return userToken;
         }
     }
 
@@ -144,7 +258,7 @@ class User {
      */
     initUser() {
         this.userToken = [];
-        this.userTokenExpireTime = [];
+        this.userTokenExpireTime = {};
         this.newDatabaseToken();
         this.stars = [];
         this.following = [];
@@ -170,23 +284,6 @@ class User {
     newDatabaseToken() {
         this.databaseToken = tokenGenerator();
         this.databaseTokenExpireTime = null;
-    }
-
-    /**
-     * For checking token if expired or not existed.
-     *
-     * @param token
-     * @returns {boolean} true if expired or not existed.
-     */
-    isUserTokenExpired(token) {
-        if (this.userTokenExpireTime[token] === undefined) {
-            // Token not existed
-            return true;
-        }else if (this.userTokenExpireTime[token] < new Date()) {
-            // Token expired
-            return true;
-        }
-        return false;
     }
 
 

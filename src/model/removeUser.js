@@ -10,7 +10,7 @@ let config = require('../../config');
  */
 async function removeUser(db,id) {
     let result = await db.collection(config.database.table).deleteOne({identity:id}).catch(err => {
-        log.error("Remove User error",err);
+        log.fatal("Remove User error",err);
     });
     return result;
 }
