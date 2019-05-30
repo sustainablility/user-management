@@ -19,8 +19,13 @@ async function userInfo(request,response) {
     let loginResult = await user.getUserByToken(request.query.token);
 
     // Result check
-    if (loginResult !== 0) {
-        log.access("Get user information by token failed","Token not correct",request.ip,"anonymous");
+    if (loginResult === 1) {
+        log.access("Get user information by token failed","Database Error",request.ip,"anonymous");
+        response.status(500).send("Internal Error");
+        return null;
+    }
+    if (loginResult === 2) {
+        log.access("Get user information by token failed","Token Error",request.ip,"anonymous");
         response.status(400).send("Token Error");
         return null;
     }
