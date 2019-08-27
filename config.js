@@ -23,10 +23,10 @@ exports.oauthURL = {
 };
 
 exports.database = {
-    host: 'lb.thatseed.org',
+    host: '104.251.225.136',
     db: 'users-management',
     table: 'users-list',
-    port: 6666,
+    port: 12222,
 };
 
 // In hours
