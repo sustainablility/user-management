@@ -1,5 +1,6 @@
 let log = require('../log');
 let User = require('../user/index');
+let encryption = require("../microservice-communication-encryption/index");
 async function userInfo(request,response) {
 
     // Parameter existed
@@ -26,11 +27,11 @@ async function userInfo(request,response) {
     }
     if (loginResult === 2) {
         log.access("Get user information by token failed","Token Error",request.ip,"anonymous");
-        response.status(400).send("Token Error");
+        response.send("");
         return null;
     }
     log.access("Get user information by token success","get user information success",request.ip,user.identity);
-    response.send(JSON.stringify(user.packingUserInformation()));
+    response.send(encryption.encrypt(JSON.stringify(user.packingUserInformation())));
 }
 
 module.exports = userInfo;

@@ -25,7 +25,7 @@ async function getID(request,response) {
     }
     if (loginResult === 2) {
         log.access("Get user ID by database token failed","Token Error",request.ip,"anonymous");
-        response.status(400).send("Token Error");
+        response.send("");
         return null;
     }
     log.access("Get user ID by database token success","get user ID success",request.ip,user.identity);
