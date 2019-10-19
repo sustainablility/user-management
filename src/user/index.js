@@ -37,6 +37,12 @@ class User {
     getDatabases() {
         return this.databases;
     }
+    getProcedures() {
+        return this.procedures;
+    }
+    getTools() {
+        return this.tools;
+    }
     getOrganization() {
         return this.organization;
     }
@@ -72,6 +78,8 @@ class User {
             following: this.following,
             stars: this.stars,
             databases: this.databases,
+            procedures: this.procedures,
+            tools: this.tools,
             organization: this.organization,
             location: this.location,
             personalDesc: this.personalDesc,
@@ -263,6 +271,8 @@ class User {
         this.stars = [];
         this.following = [];
         this.databases = [];
+        this.procedures = [];
+        this.tools = [];
         this.organization = [];
         this.location = "";
         this.personalDesc = "";

@@ -1,10 +1,12 @@
 let app = require('express')();
 let config = require('./config');
-
+let cors = require('cors');
 function service(){
+    app.use(cors());
     app.get(config.pathToOauthAuthorizationCallbackUrl, require('./src/oauth/index'));
-    app.get(config.pathToGetUserInformationByToken,require('./src/apis/getUserInformationByToken'));
-    app.get(config.pathToGetIDByDatabaseToken,require('./src/apis/getUserIDByDatabaseToken'));
+    app.get("/user/info",require('./src/apis/getUserInformationByToken'));
+    app.get("/backend/getIdByDatabaseToken",require('./src/apis/getUserIDByDatabaseToken'));
+    app.get("/fontend/userinfo",require("./src/apis/getPublicUserInformationByToken"));
     app.listen(config.listenOnPort);
 }
 

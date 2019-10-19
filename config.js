@@ -1,9 +1,5 @@
 exports.pathToOauthAuthorizationCallbackUrl = "/oauth/callback";
 
-exports.pathToGetUserInformationByToken = "/user/info";
-
-exports.pathToGetIDByDatabaseToken = "/backend/getIdByDatabaseToken";
-
 exports.apiURL = "http://127.0.0.1:8888";
 
 exports.listenOnPort = 8888;
@@ -23,10 +19,10 @@ exports.oauthURL = {
 };
 
 exports.database = {
-    host: '104.251.225.136',
+    host: '45.79.187.245',
     db: 'users-management',
     table: 'users-list',
-    port: 12222,
+    port: 10101,
 };
 
 // In hours
