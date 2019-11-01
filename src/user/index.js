@@ -320,6 +320,16 @@ class User {
         return updateResult.result.ok === 1;
     }
 
+    async syncUserInformation() {
+        let newConnection = await createConnection();
+        if (await this.updateUserDatabase(newConnection.db)) {
+            newConnection.done();
+            return true;
+        }
+        newConnection.done();
+        return false;
+    }
+
     /**
      * Helper function for removeUser
      * @param db
