@@ -15,10 +15,12 @@ async function oauthLoginReturnOauthToken(request, response) {
         return null;
     }
 
+
     let userID = encryption.decrypt(request.query["id"]);
     let email = encryption.decrypt(request.query["email"] );
 
-    if (userID === null || email === null) {
+
+    if (userID === null) {
         response.status(400).send("decription failed");
         return null;
     }
